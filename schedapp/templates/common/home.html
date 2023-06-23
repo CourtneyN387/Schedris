@@ -1,0 +1,25 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="height: 90vh;">
+    <div class="col-lg-8 text-center">
+        <h1 class="display-1 fw-bold text-primary">Welcome to Schedris.</h1>
+        <div class="col-xs-12" style="height:100px;"></div>
+        <h2 class="mb-5">Time is like Tetris</h2>
+        <p class="lead mb-5">Scheduling can be quite hard.</p>
+        <h2 class="mb-5">You should use Schedris</h2>
+
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            {% if user and user.is_authenticated and user.is_advisor %}
+                <a class="btn btn-lg btn-primary" href="{% url 'advisor-schedule-list' %}">View Schedules</a>
+            {% elif user and user.is_authenticated and not user.is_advisor%}
+                <a class="btn btn-lg btn-primary me-sm-2 mb-3 mb-sm-0" href="{% url 'student' %}">Student Home</a>
+            {% else %}
+                <a class="btn btn-lg btn-primary" href="/accounts/login/">Login</a>
+                <a class="btn btn-lg btn-primary" href="/accounts/signup/">Signup</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

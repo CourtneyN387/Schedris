@@ -1,0 +1,44 @@
+{% extends 'common/base.html' %}
+
+<!--Block content goes below-->
+{% block content %}
+
+<html>
+<body>
+<h1>My Schedules</h1>
+
+{% for schedule in schedules %}
+{% if schedule.approval_status != "unsubmitted" %}
+<div class="container my-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start">
+          <div class="flex-grow-1">
+            <h2>Name: {{schedule.name}}</h2>
+            <h2> Approval Status:
+            {% if schedule.approval_status == "approved" %}
+              <span class="badge rounded-pill text-bg-success">Approved</span>
+              <p>Approved</p>
+            {% elif schedule.approval_status == "pending" %}
+              <span class="badge rounded-pill text-bg-warning">Pending</span>
+              <p>Pending</p>
+            {% elif schedule.approval_status == "denied" %}
+              <span class="badge rounded-pill text-bg-danger">Denied</span>
+              <p>Denied</p>
+            {% else %}
+              <span class="badge rounded-pill text-bg-danger">Approval Status Unknown</span>
+            {% endif %}
+            </h2>
+            <h3>Student: {{schedule.student}}</h3>
+          </div>
+        </div>
+      </div>
+      <a href="{% url 'advisor-schedule-detail' schedule.pk %}" class="stretched-link"></a>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+</body>
+</html>
+
+{% endblock %}

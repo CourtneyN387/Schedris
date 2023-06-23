@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+    <title>Fixed top navbar example · Bootstrap v5.0</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/navbar-fixed/">
+
+    {% load static %}    
+
+    <!-- Bootstrap core CSS -->
+<link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+    
+    <!-- Custom styles for this template -->
+  </head>
+  <body>
+    
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'home' %}">Schedris</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+        <li><a href="{% url 'home' %}" class="nav-link px-2 text-white">Home</a></li>
+        <li><a href="{% url 'course_list' %}" class="nav-link px-2 text-white">Courses</a></li>
+        <li><a href="{% url 'schedule-list' %}" class="nav-link px-2 text-white">Schedules</a></li>
+        {% if user.is_authenticated and not user.is_advisor %}
+          <li><a href="{% url 'shopping_cart' %}" class="nav-link px-2 text-white">Cart</a></li>
+        {% endif %}
+        <li><a href="{% url 'FAQ' %}" class="nav-link px-2 text-white">FAQs</a></li>
+        <li><a href="{% url 'About' %}" class="nav-link px-2 text-white">About</a></li>
+      </ul>
+      <div class="text-end">
+        {% if user.is_authenticated %}
+        <a href="/accounts/logout">
+          <button type="button" class="btn btn-outline-light me-2">Logout</button>
+        </a>
+        {% else %}
+        <a href="/accounts/login">
+          <button type="button" class="btn btn-outline-light me-2">Login</button>
+        </a>
+        {% endif %}
+      </div>
+      
+    </div>
+  </div>
+</nav>
+    <script src="../assets/dist/js/bootstrap.bundle.min.js"></script>
+
+      
+  </body>
+</html>

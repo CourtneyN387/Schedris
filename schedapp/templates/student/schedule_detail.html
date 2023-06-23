@@ -1,0 +1,1461 @@
+{% extends 'common/base.html' %}
+
+
+<!--Block content goes below-->
+{% block content %}
+
+<html>
+<style>
+    body{
+    margin-top:20px;
+    }
+    .bg-blue {
+        background-color: #a1b5ff;
+    }
+    .bg-light-gray {
+        background-color: #f7f7f7;
+    }
+    .table-bordered thead td, .table-bordered thead th {
+        border-bottom-width: 2px;
+    }
+    .table thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .table-bordered td, .table-bordered th {
+        border: 1px solid #dee2e6;
+    }
+
+
+    .bg-sky {
+        background-color: #3557f0
+    }
+
+    .padding-15px-lr {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .padding-5px-tb {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+    .margin-10px-bottom {
+        margin-bottom: 10px;
+    }
+    .border-radius-5 {
+        border-radius: 5px;
+    }
+
+    .margin-10px-top {
+        margin-top: 10px;
+    }
+    .font-size14 {
+        font-size: 14px;
+    }
+
+    .font-size13 {
+        font-size: 13px;
+    }
+
+    .table-bordered td, .table-bordered th {
+        border: 1px solid #dee2e6;
+    }
+    .table td, .table th {
+        padding: .25rem;
+        vertical-align: top;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+<body>
+<div class="d-flex justify-content-left">
+    <div class="col-lg-8 text-left">
+    <h1>{{schedule.name}}</h1>
+    <h2>Approval Status: {{schedule.approval_status}}</h2>
+    <div class="d-grid gap-2 d-sm-flex justify-content-left">
+            {% if schedule.approval_status == "pending" %}
+            <form action="{% url 'schedule-change-approval-status' %}" name="student-change-approval-form" method="post">
+                {% csrf_token %}
+                <fieldset>
+                    <input type="hidden" name="sched-id" value="{{ schedule.pk }}">
+                    <button class="btn btn-primary" type="submit">Retract Submission for Approval</button>
+                    <input type="hidden" name="new-status" value="unsubmitted">
+                </fieldset>
+            </form>
+            {% elif schedule.approval_status == "unsubmitted" %}
+            <form action="{% url 'schedule-change-approval-status' %}" name="student-change-approval-form" method="post">
+                {% csrf_token %}
+                <fieldset>
+                    <input type="hidden" name="sched-id" value="{{ schedule.pk }}">
+                    <button class="btn btn-primary" type="submit">Submit for Approval</button>
+                    <input type="hidden" name="new-status" value="pending">
+                </fieldset>
+            </form>
+            {% endif %}
+            <a class="btn btn-primary" type="submit" href="{% url 'schedule-delete' schedule.pk %}">Delete Schedule</a>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-center">
+    <div class="col-4">
+        {% for course in schedule.courses.all %}
+        <div class="container my-3">
+        <div class="card">
+            <div class="row">
+            <div class="col-auto bg-primary" style="width: 10px;"></div>
+            <div class="col">
+                <div class="card-body">
+                <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                    <li>{{ course.subject }} {{ course.catalog_nbr }} - {{ course.descr }}</li>
+                    <ul>
+                        <li>Section: {{ course.class_section }}</li>
+                        <li>Status: {{course.enrollment_available}}/{{course.class_capacity}}</li>
+                        <li>Instruction: {{course.instruction_mode_descr}}</li>
+                        <li>Days: {{course.meetings.0.days}}</li>
+                        <li>Start: {{ course.meetings.0.start_time}}</li>
+                        <li>End: {{course.meetings.0.end_time}}</li>
+                        <li>Room: {{course.meetings.0.facility_descr}}</li>
+                        <li>Instructor: {{course.meetings.0.instructor}}</li>
+                        </ul>
+                    </div>
+                    <div>
+                    <form action="{% url 'student-schedule-remove-course' %}" name="remove-course-form" method="post">
+                        {% csrf_token %}
+                        <fieldset>
+                            <input type="hidden" name="sched-id" value="{{ schedule.pk }}">
+                            <input type="hidden" name="class_nbr" value="{{ course.class_nbr }}">
+                        </fieldset>
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                    </form>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col">
+        <div class="container">
+                <div class="timetable-img text-center">
+                    <img src="img/content/timetable.png" alt="">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center">
+                        <thead>
+                            <tr class="bg-light-gray">
+                                <th class="text-uppercase">Time
+                                </th>
+                                <th class="text-uppercase">Monday</th>
+                                <th class="text-uppercase">Tuesday</th>
+                                <th class="text-uppercase">Wednesday</th>
+                                <th class="text-uppercase">Thursday</th>
+                                <th class="text-uppercase">Friday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                                <td class="align-middle">08:00am</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                                <td class="align-middle">09:00am</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 AM" or course.meetings.0.end_time == "09:30 AM" or course.meetings.0.end_time == "09:45 AM" or course.meetings.0.end_time == "09:50 AM" or course.meetings.0.end_time == "10:00 AM" or course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "10:50 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "11:50 AM" or course.meetings.0.end_time == "12:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+<!--                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16 xs-font-size13">Dance</span>-->
+<!--                                    <div class="margin-10px-top font-size14">9:00-10:00</div>-->
+<!--                                    <div class="font-size13 text-light-gray">Ivana Wong</div>-->
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 AM" or course.meetings.0.end_time == "09:30 AM" or course.meetings.0.end_time == "09:45 AM" or course.meetings.0.end_time == "09:50 AM" or course.meetings.0.end_time == "10:00 AM" or course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "10:50 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "11:50 AM" or course.meetings.0.end_time == "12:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 AM" or course.meetings.0.end_time == "09:30 AM" or course.meetings.0.end_time == "09:45 AM" or course.meetings.0.end_time == "09:50 AM" or course.meetings.0.end_time == "10:00 AM" or course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "10:50 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "11:50 AM" or course.meetings.0.end_time == "12:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 AM" or course.meetings.0.end_time == "09:30 AM" or course.meetings.0.end_time == "09:45 AM" or course.meetings.0.end_time == "09:50 AM" or course.meetings.0.end_time == "10:00 AM" or course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "10:50 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "11:50 AM" or course.meetings.0.end_time == "12:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 AM" or course.meetings.0.end_time == "09:30 AM" or course.meetings.0.end_time == "09:45 AM" or course.meetings.0.end_time == "09:50 AM" or course.meetings.0.end_time == "10:00 AM" or course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "10:50 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "11:50 AM" or course.meetings.0.end_time == "12:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">10:00am</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 AM" or course.meetings.0.end_time == "10:30 AM" or course.meetings.0.end_time == "10:45 AM" or course.meetings.0.end_time == "11:00 AM" or course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">11:00am</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "11:15 AM" or course.meetings.0.end_time == "11:30 AM" or course.meetings.0.end_time == "11:45 AM" or course.meetings.0.end_time == "12:00 PM" or course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" %}
+                                    {% if course.meetings.0.start_time == "08:00 AM" or course.meetings.0.start_time == "08:30 AM" or course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">12:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM"  %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM"  %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM"  %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM"  %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "12:15 PM" or course.meetings.0.end_time == "12:30 PM" or course.meetings.0.end_time == "12:45 PM" or course.meetings.0.end_time == "01:00 PM" or course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "09:00 AM" or course.meetings.0.start_time == "09:30 AM" or course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM"  %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">1:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "01:15 PM" or course.meetings.0.end_time == "01:30 PM" or course.meetings.0.end_time == "01:45 PM" or course.meetings.0.end_time == "02:00 PM" or course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM"  %}
+                                    {% if course.meetings.0.start_time == "10:00 AM" or course.meetings.0.start_time == "10:30 AM" or course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">2:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "02:15 PM" or course.meetings.0.end_time == "02:30 PM" or course.meetings.0.end_time == "02:45 PM" or course.meetings.0.end_time == "03:00 PM" or course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" %}
+                                    {% if course.meetings.0.start_time == "11:00 AM" or course.meetings.0.start_time == "11:30 AM" or course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">3:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "03:15 PM" or course.meetings.0.end_time == "03:30 PM" or course.meetings.0.end_time == "03:45 PM" or course.meetings.0.end_time == "04:00 PM" or course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" %}
+                                    {% if course.meetings.0.start_time == "12:00 PM" or course.meetings.0.start_time == "12:30 PM" or course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">4:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "04:15 PM" or course.meetings.0.end_time == "04:30 PM" or course.meetings.0.end_time == "04:45 PM" or course.meetings.0.end_time == "05:00 PM" or course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" %}
+                                    {% if course.meetings.0.start_time == "01:00 PM" or course.meetings.0.start_time == "01:30 PM" or course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">5:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "05:15 PM" or course.meetings.0.end_time == "05:30 PM" or course.meetings.0.end_time == "05:45 PM" or course.meetings.0.end_time == "06:00 PM" or course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" %}
+                                    {% if course.meetings.0.start_time == "02:00 PM" or course.meetings.0.start_time == "02:30 PM" or course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">6:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "06:15 PM" or course.meetings.0.end_time == "06:30 PM" or course.meetings.0.end_time == "06:45 PM" or course.meetings.0.end_time == "07:00 PM" or course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" %}
+                                    {% if course.meetings.0.start_time == "03:00 PM" or course.meetings.0.start_time == "03:30 PM" or course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">7:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "07:15 PM" or course.meetings.0.end_time == "07:30 PM" or course.meetings.0.end_time == "07:45 PM" or course.meetings.0.end_time == "08:00 PM" or course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" %}
+                                    {% if course.meetings.0.start_time == "04:00 PM" or course.meetings.0.start_time == "04:30 PM" or course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">8:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "08:15 PM" or course.meetings.0.end_time == "08:30 PM" or course.meetings.0.end_time == "08:45 PM" or course.meetings.0.end_time == "09:00 PM" or course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "05:00 PM" or course.meetings.0.start_time == "05:30 PM" or course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="align-middle">9:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "09:15 PM" or course.meetings.0.end_time == "09:30 PM" or course.meetings.0.end_time == "09:45 PM" or course.meetings.0.end_time == "10:00 PM" or course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "06:00 PM" or course.meetings.0.start_time == "06:30 PM" or course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        <tr>
+                                <td class="align-middle">10:00pm</td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 PM" or course.meetings.0.start_time == "10:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" or course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "Mo" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 PM" or course.meetings.0.start_time == "10:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" or course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Tu" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 PM" or course.meetings.0.start_time == "10:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" or course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "We" or course.meetings.0.days == "MoWe" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 PM" or course.meetings.0.start_time == "10:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" or course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "TuTh" or course.meetings.0.days == "Th" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for course in schedule.courses.all %}
+                                    {% if course.meetings.0.start_time == "10:00 PM" or course.meetings.0.start_time == "10:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% elif course.meetings.0.end_time == "10:15 PM" or course.meetings.0.end_time == "10:30 PM" %}
+                                    {% if course.meetings.0.start_time == "07:00 PM" or course.meetings.0.start_time == "07:30 PM" or course.meetings.0.start_time == "08:00 PM" or course.meetings.0.start_time == "08:30 PM" or course.meetings.0.start_time == "09:00 PM" or course.meetings.0.start_time == "09:30 PM" %}
+                                    {% if course.meetings.0.days == "Fr" or course.meetings.0.days == "MoWeFr" %}
+                                    <span class="bg-sky padding-5px-tb padding-15px-lr border-radius-5 margin-10px-bottom text-white font-size16  xs-font-size13">{{ course.subject }} {{ course.catalog_nbr }}</span>
+                                    <div class="margin-10px-top font-size14">{{ course.meetings.0.start_time}} - {{course.meetings.0.end_time}}</div>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+</div>
+
+</body>
+</html>
+
+{% endblock %}

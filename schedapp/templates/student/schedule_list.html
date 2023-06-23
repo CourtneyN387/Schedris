@@ -1,0 +1,37 @@
+{% extends 'common/base.html' %}
+
+<!--Block content goes below-->
+{% block content %}
+
+<html>
+<body>
+<h1>My Schedules</h1>
+
+{% for schedule in schedules %}
+  <div class="container my-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start">
+          <div class="flex-grow-1">
+            <h2>Name: {{schedule.name}}</h2>
+            <h3>Approver: {{schedule.approver}}</h3>
+            <h3>Student: {{schedule.student}}</h3>
+          </div>
+        </div>
+      </div>
+      <a href="{% url 'student-schedule-detail' schedule.pk %}" class="stretched-link"></a>
+    </div>
+  </div>
+{% endfor %}
+
+<a class="btn btn-lg btn-primary me-sm-2 mb-3 mb-sm-0" href="{% url 'schedule-create' %}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+    </svg> 
+    Add New Schedule
+  </a>
+
+</body>
+</html>
+
+{% endblock %}

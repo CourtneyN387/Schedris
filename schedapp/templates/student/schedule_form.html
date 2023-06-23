@@ -1,0 +1,14 @@
+{% extends 'common/base.html' %}
+
+<!--Block content goes below-->
+{% block content %}
+
+{% load crispy_forms_tags %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit" class="btn btn-primary">Create</button>
+</form>
+
+{% endblock %}

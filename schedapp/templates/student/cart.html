@@ -1,0 +1,76 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="description" content="">
+            <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+            <meta name="generator" content="Hugo 0.84.0">
+            <title>Course List</title>
+            <style>
+                .course-box {
+                    border: 1px solid black;
+                    padding: 10px;
+                    margin-bottom: 10px;
+                }
+            </style>
+        </head>
+        <body>
+            <h1> Shopping Cart </h1>
+            <a href="{% url 'course_list' %}" class="btn btn-primary " style="float: right;">Add Class</a>
+            <div style="display: inline-block; margin-right: 10px;">
+                <label for="strm-select" style="font-weight: bold;">Term:</label>
+                <select id="strm-select" onchange="location = '?strm=' + this.value;" style="background-color: white;" style="border: 2px solid #ccc; border-radius: 4px; padding: 5px; font-size: 16px; ">
+                    <option value="">-- Select Term --</option>
+                    {% for strm, strm_name in strm_names %}
+                        <option value="{{ strm }}" {% if request.GET.strm == strm|slugify %}selected{% endif %}>
+                            {{ strm_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="margin-bottom: 20px;"></div>
+            {% for course in courses %}
+            <div class="course-box">
+                <h2>{{ course.subject }} {{ course.catalog_nbr }}</h2>
+                <p>{{ course.descr }}</p>
+                <p><strong>Units:</strong> {{ course.units }}</p>
+                <div class="d-grid gap-2">
+                <form method="post" action="{% url 'remove_from_cart' course.class_nbr %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="course_id" value="{{ course.class_nbr }}">
+                    <button type="submit" class="btn btn-primary">Remove from Cart</button>
+                </form>
+                <style type="text/css">
+                    .addscheduledropdowncss:hover .dropdown-menu {
+                        display: block;
+                        margin-top: 0;
+                    }                   
+                    </style>
+                <div class="dropdown addscheduledropdowncss">
+                    <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown">Add to Schedule<span class="caret"></span></a> 
+                    <ul class="dropdown-menu">
+                        {% for schedule in schedules %}
+                        <li>
+                            <form action="{% url 'student-schedule-add-course' %}" name="add-course-form" method="post">
+                                {% csrf_token %}
+                                <fieldset>
+                                    <input type="hidden" name="sched-id" value="{{ schedule.pk }}">
+                                    <input type="hidden" name="class_nbr" value="{{ course.class_nbr }}">
+                                </fieldset>
+                                <button class="dropdown-item" type="submit">{{schedule.name}}</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                </div>
+            </div>
+            {% endfor %}
+            <p><strong>Total Units:</strong> {{ total_units }}</p>
+        </body>
+    </html>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# Load the tag library #}
+    {% load bootstrap5 %}
+
+    {# Load CSS and JavaScript #}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    {# Display django.contrib.messages as Bootstrap alerts #}
+    {% bootstrap_messages %}
+    
+    <title>Sched-Ris</title>
+
+    <style>
+        /* Add this style block */
+        body, html {
+            height: 100%;
+        }
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+        .content {
+            flex: 1;
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="content-wrapper">
+        {% include 'common/includes/navbar.html' %}
+
+        <div class="container-fluid text-dark py-5 content">
+            <div class="container py-5">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+
+        {% include 'common/includes/footer.html' %}
+    </div>
+</body>
+</html>

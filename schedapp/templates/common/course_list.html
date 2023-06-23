@@ -1,0 +1,4010 @@
+{% extends 'common/base.html' %}
+{% load static %}
+<!--Block content goes below-->
+{% block content %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+    <title>Course List</title>
+    <style>
+    </style>
+  </head>
+  <body>
+    <h1>Course List</h1>
+    <details open>
+        <summary>Search Options</summary>
+        <div class="d-flex justify-content-center">
+        <div class="container my-3">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="container">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="keyword" class="form-label">*Keyword Search:</label>
+                            <input name="keyword" type="text" class="form-control" id="keyword" placeholder="Enter a keyword">
+                        </div>
+                    </div>
+            
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="Term" class="form-label">Term:</label>
+                            <select name="Term" id="Term" class="form-select">
+                                <option value="1232">Spring 2023</option>
+                                <option value="1238">Fall 2023</option>
+                                <option value="1222">Spring 2022</option>
+                                <option value="1228">Fall 2022</option>
+                                <option value="1212">Spring 2021</option>
+                                <option value="1218">Fall 2021</option>
+                                <option value="1202">Spring 2020</option>
+                                <option value="1208">Fall 2020</option>
+                                <option value="">All Terms</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="department" class="form-label">*Department:</label>
+                            <select name="department" id="department" class="form-select">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                    </div>
+            
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="subject" class="form-label">*Subject:</label>
+                            <select name="subject" id="subject" class="form-select">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="location" class="form-label">Location:</label>
+                            <select name="location" id="location" class="form-select">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                    </div>
+            
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="instruct_modes" class="form-label">Instruction Mode:</label>
+                            <select name="instruct_modes" id="instruct_modes" class="form-select">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="session_code" class="form-label">Academic Session:</label>
+                            <select name="session_code" id="session_code" class="form-select">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                    </div>
+            
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="catalog" class="form-label">*Catalog #:</label>
+                            <input name="catalog" type="text" class="form-control" id="catalog" placeholder="Enter #">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="search-button">Search</button>
+                </form>
+            </div>
+        </div>
+      </div>
+    </div>
+    </details>
+    
+    <ul>
+        {% for course in courses %}
+      
+        <div class="d-flex justify-content-center">
+            <div class="container my-3">
+              <div class="card">
+                <div class="row">
+                  <div class="col-auto bg-primary" style="width: 10px;"></div>
+                  <div class="col">
+                    <div class="card-body">
+                      <div class="d-flex align-items-start">
+                        <div class="flex-grow-1">
+                          <li>{{ course.subject }} {{ course.catalog_nbr }} - {{ course.descr }}</li>
+                          <ul>
+                            <li>Section: {{ course.class_section }}</li>
+                            <li>Status: {{course.enrollment_available}}/{{course.class_capacity}}</li>
+                            <li>Instruction: {{course.instruction_mode_descr}}</li>
+                            <li>Days: {{course.meetings.0.days}}</li>
+                            <li>Start: {{ course.meetings.0.start_time}}</li>
+                            <li>End: {{course.meetings.0.end_time}}</li>
+                            <li>Room: {{course.meetings.0.facility_descr}}</li>
+                            <li>Instructor: {{ course.meetings.0.instructor|remove_symbols }}</li>
+                            </ul>
+                        </div>
+                        {% if not user.is_advisor %}
+                        <div class="d-grid gap-2">
+                          <div>
+                            <form method="post" action="{% url 'add_to_cart' course.class_nbr course.strm %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="course_id" value="{{ course.class_nbr }}">
+                                <button type="submit" class="btn btn-primary">Add to Cart</button>
+                            </form>  
+                          </div>
+                          <style type="text/css">
+                          .addscheduledropdowncss:hover .dropdown-menu {
+                              display: block;
+                              margin-top: 0;
+                          }                   
+                          </style>
+                          <div class="dropdown addscheduledropdowncss">
+                              <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown">Add to Schedule<span class="caret"></span></a> 
+                              <ul class="dropdown-menu">
+                                {% for schedule in schedules %}
+                                <li>
+                                    <form action="{% url 'student-schedule-add-course' %}" name="add-course-form" method="post">
+                                        {% csrf_token %}
+                                        <fieldset>
+                                            <input type="hidden" name="sched-id" value="{{ schedule.pk }}">
+                                            <input type="hidden" name="class_nbr" value="{{ course.class_nbr }}">
+                                        </fieldset>
+                                        <button class="dropdown-item" type="submit">{{schedule.name}}</button>
+                                    </form>
+                                </li>
+                                {% endfor %}
+                              </ul>
+                          </div>
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </ul>
+    <!-- javascript for dropdowns -->
+    <script>
+
+      var locationData = { "locations": [
+        {
+            "location": "NORTHERN",
+            "descr": "-SCPS Northern Virginia Center"
+        },
+        {
+            "location": "INOVA",
+            "descr": "Inova Fairfax Medical Campus"
+        },
+        {
+            "location": "OFFGROUNDS",
+            "descr": "Off-Grounds"
+        },
+        {
+            "location": "MAIN",
+            "descr": "On Grounds"
+        },
+        {
+            "location": "ONLINE",
+            "descr": "Online"
+        },
+        {
+            "location": "ISESP-03",
+            "descr": "Spain: Valencia"
+        },
+        {
+            "location": "UNIVERSITY",
+            "descr": "University of Virginia"
+        }
+    ],};
+    var locationDropdown = document.getElementById("location");
+  
+  
+  for (var i = 0; i<locationData.locations.length; i++){
+      var sub = locationData.locations[i];
+      var option = document.createElement("option");
+      option.text = sub.descr;
+      option.value = sub.location;
+      locationDropdown.add(option);
+  }
+
+      var sessionData = { "sessions": [
+        {
+            "session_code": "DD1",
+            "descr": "Dynamic Date 1",
+            "terms": [
+                "1228"
+            ],
+            "careers": [
+                "GRAD",
+                "NOCR",
+                "UGRD"
+            ]
+        },
+        {
+            "session_code": "1",
+            "descr": "Regular Academic Session",
+            "terms": [
+                "1228"
+            ],
+            "careers": [
+                "BUSN",
+                "GRAD",
+                "LAW",
+                "MEDS",
+                "NOCR",
+                "UGRD"
+            ]
+        },
+        {
+            "session_code": "SRT",
+            "descr": "Short Add",
+            "terms": [
+                "1228"
+            ],
+            "careers": [
+                "GRAD",
+                "UGRD"
+            ]
+        }
+    ]};
+
+    var sessionDropdown = document.getElementById("session_code");
+  
+  
+  for (var i = 0; i<sessionData.sessions.length; i++){
+      var sub = sessionData.sessions[i];
+      var option = document.createElement("option");
+      option.text = sub.descr;
+      option.value = sub.session_code;
+      sessionDropdown.add(option);
+  }
+
+      var instructData = {"instruct_modes": [
+        {
+            "instruction_mode": "HY",
+            "descr": "Hybrid"
+        },
+        {
+            "instruction_mode": "HR",
+            "descr": "Hybrid with Remote Option"
+        },
+        {
+            "instruction_mode": "P",
+            "descr": "In Person"
+        },
+        {
+            "instruction_mode": "PR",
+            "descr": "In Person with Remote Option"
+        },
+        {
+            "instruction_mode": "OA",
+            "descr": "Online Asynchronous"
+        },
+        {
+            "instruction_mode": "OS",
+            "descr": "Online Synchronous"
+        },
+        {
+            "instruction_mode": "RR",
+            "descr": "Research Rate"
+        }
+    ]};
+    var instructDropdown = document.getElementById("instruct_modes");
+  
+  
+  for (var i = 0; i<instructData.instruct_modes.length; i++){
+      var sub = instructData.instruct_modes[i];
+      var option = document.createElement("option");
+      option.text = sub.descr;
+      option.value = sub.instruction_mode;
+      instructDropdown.add(option);
+  }
+    </script>
+    <script>
+    var subjectsData = {
+      "subjects": [
+          {
+              "subject": "AAS",
+              "descr": "AAS - African-American and African Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "AAS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ACCT",
+              "descr": "ACCT - Accounting",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "AIRS",
+              "descr": "AIRS - Air Science",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "AIRS"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ALAR",
+              "descr": "ALAR - Architecture and Landscape Architecture",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "ALAR"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "AM",
+              "descr": "AM - Applied Mechanics",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "AM"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "AMST",
+              "descr": "AMST - American Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "AMST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ANTH",
+              "descr": "ANTH - Anthropology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ANTH"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "APMA",
+              "descr": "APMA - Applied Mathematics",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "APMA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARAB",
+              "descr": "ARAB - Arabic",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARAD",
+              "descr": "ARAD - Arts Administration",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ART"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARAH",
+              "descr": "ARAH - History of Art and Architecture",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ART"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARCH",
+              "descr": "ARCH - Architecture",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "ARCHDP"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARCY",
+              "descr": "ARCY - Archaeology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ANTH"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARH",
+              "descr": "ARH - Architectural History",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "ARH"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARTH",
+              "descr": "ARTH - History of Art",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ART"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARTR",
+              "descr": "ARTR - Arabic in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ARTS",
+              "descr": "ARTS - Studio Art",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ART"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ASL",
+              "descr": "ASL - American Sign Language",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ASL"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ASTR",
+              "descr": "ASTR - Astronomy",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ASTR"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BIMS",
+              "descr": "BIMS - Biomedical Sciences",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "BIMS"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BIOC",
+              "descr": "BIOC - Biochemistry",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "BIOC"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BIOL",
+              "descr": "BIOL - Biology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "BIOL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BIOP",
+              "descr": "BIOP - Biophysics",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "BIOP"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BME",
+              "descr": "BME - Biomedical Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "BIOM"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "BUS",
+              "descr": "BUS - Business",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "CASS",
+              "descr": "CASS - College Art Scholars Seminar",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CE",
+              "descr": "CE - Civil Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "ESE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CELL",
+              "descr": "CELL - Cell Biology",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "CELL"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CHE",
+              "descr": "CHE - Chemical Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "CHE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CHEM",
+              "descr": "CHEM - Chemistry",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CHEM"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CHIN",
+              "descr": "CHIN - Chinese",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CHTR",
+              "descr": "CHTR - Chinese in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CLAS",
+              "descr": "CLAS - Classics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CLAS"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "COGS",
+              "descr": "COGS - Cognitive Science",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "COGS"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "COLA",
+              "descr": "COLA - College Advising Seminar",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "COMM",
+              "descr": "COMM - Commerce",
+              "acad_groups": [
+                  "COMM"
+              ],
+              "acad_orgs": [
+                  "COMMD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CONC",
+              "descr": "CONC - Commerce-Non-Credit",
+              "acad_groups": [
+                  "COMM"
+              ],
+              "acad_orgs": [
+                  "COMMD"
+              ],
+              "careers": [
+                  "NOCR"
+              ],
+              "campuses": [
+                  "ONLNE"
+              ]
+          },
+          {
+              "subject": "CPE",
+              "descr": "CPE - Computer Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "ECE"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CREO",
+              "descr": "CREO - Creole",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "FREN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "CS",
+              "descr": "CS - Computer Science",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "CS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "DANC",
+              "descr": "DANC - Dance",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "DRAM"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "DEM",
+              "descr": "DEM - Democracy Initiative",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "DH",
+              "descr": "DH - Digital Humanities",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "DRAM",
+              "descr": "DRAM - Drama",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "DRAM"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "DS",
+              "descr": "DS - Data Science",
+              "acad_groups": [
+                  "DSCI"
+              ],
+              "acad_orgs": [
+                  "DATAD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EALC",
+              "descr": "EALC - East Asian Languages, Literatures, and Cultures",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EAST",
+              "descr": "EAST - East Asian Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ECE",
+              "descr": "ECE - Electrical and Computer Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "ECE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ECON",
+              "descr": "ECON - Economics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ECON"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EDHS",
+              "descr": "EDHS - Education-Human Services",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDHS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EDIS",
+              "descr": "EDIS - Education-Curriculum, Instruction, & Special Ed",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDIS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "ONLNE"
+              ]
+          },
+          {
+              "subject": "EDLF",
+              "descr": "EDLF - Education-Leadership, Foundations, and Policy",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDLF"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "OFFGR",
+                  "ONLNE"
+              ]
+          },
+          {
+              "subject": "EDNC",
+              "descr": "EDNC - Education-Non-Credit",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDUCD"
+              ],
+              "careers": [
+                  "NOCR"
+              ],
+              "campuses": [
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "EGMT",
+              "descr": "EGMT - Engagement",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ELA",
+              "descr": "ELA - Engaging the Liberal Arts",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGAS"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ENCW",
+              "descr": "ENCW - English-Creative Writing",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ENGL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ENGL",
+              "descr": "ENGL - English Literature",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ENGL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ENGR",
+              "descr": "ENGR - Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "ENGRD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ENTP",
+              "descr": "ENTP - Entrepreneurship",
+              "acad_groups": [
+                  "COMM"
+              ],
+              "acad_orgs": [
+                  "COMMD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "ONLNE"
+              ]
+          },
+          {
+              "subject": "ENWR",
+              "descr": "ENWR - English-Academic, Professional, & Creative Writing",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ENGL"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ESL",
+              "descr": "ESL - English as a Second Language",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "ESL"
+              ],
+              "careers": [
+                  "NOCR"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ETP",
+              "descr": "ETP - Enviromental Thought and Practice",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ETP"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EURS",
+              "descr": "EURS - European Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGAS"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EVAT",
+              "descr": "EVAT - Environmental Sciences-Atmospheric Sciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EVSC"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EVEC",
+              "descr": "EVEC - Environmental Sciences-Ecology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EVSC"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EVGE",
+              "descr": "EVGE - Environmental Sciences-Geosciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EVSC"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EVHY",
+              "descr": "EVHY - Environmental Sciences-Hydrology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EVSC"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "EVSC",
+              "descr": "EVSC - Environmental Sciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EVSC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "FREN",
+              "descr": "FREN - French",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "FREN"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GBAC",
+              "descr": "GBAC - Graduate Business Analytics Commerce",
+              "acad_groups": [
+                  "MCDG"
+              ],
+              "acad_orgs": [
+                  "COMMD",
+                  "MCDG"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "GBUS",
+              "descr": "GBUS - Graduate Business",
+              "acad_groups": [
+                  "GBUS"
+              ],
+              "acad_orgs": [
+                  "GBUSD"
+              ],
+              "careers": [
+                  "BUSN"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "GCCS",
+              "descr": "GCCS - Global Commerce in Culture and Society",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GCNL",
+              "descr": "GCNL - Clinical Nurse Leader",
+              "acad_groups": [
+                  "NURS"
+              ],
+              "acad_orgs": [
+                  "NURSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GCOM",
+              "descr": "GCOM - Graduate Commerce",
+              "acad_groups": [
+                  "COMM"
+              ],
+              "acad_orgs": [
+                  "COMMD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "GDS",
+              "descr": "GDS - Global Development Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GERM",
+              "descr": "GERM - German",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "GERM"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GETR",
+              "descr": "GETR - German in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "GERM"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GHSS",
+              "descr": "GHSS - Graduate Humanities and Social Sciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GNUR",
+              "descr": "GNUR - Graduate Nursing",
+              "acad_groups": [
+                  "NURS"
+              ],
+              "acad_orgs": [
+                  "NURSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GREE",
+              "descr": "GREE - Greek",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CLAS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSAS",
+              "descr": "GSAS - Graduate Arts & Sciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSCI",
+              "descr": "GSCI - Graduate Biological and Physical Sciences",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSGS",
+              "descr": "GSGS - Global Studies-Global Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSMS",
+              "descr": "GSMS - Global Studies: Middle East and South Asia",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSSJ",
+              "descr": "GSSJ - Global Studies-Security and Justice",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "GSVS",
+              "descr": "GSVS - Global Studies-Environments and Sustainability",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HBIO",
+              "descr": "HBIO - Human Biology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "BIOL"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HEBR",
+              "descr": "HEBR - Hebrew",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HHE",
+              "descr": "HHE - Health, Humanities & Ethics",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "PHS"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIAF",
+              "descr": "HIAF - History-African History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIEA",
+              "descr": "HIEA - History-East Asian History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIEU",
+              "descr": "HIEU - History-European History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HILA",
+              "descr": "HILA - History-Latin American History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIME",
+              "descr": "HIME - History-Middle Eastern History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIND",
+              "descr": "HIND - Hindi",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HISA",
+              "descr": "HISA - History-South Asian History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIST",
+              "descr": "HIST - History-General History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HIUS",
+              "descr": "HIUS - History-United States History",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "HR",
+              "descr": "HR - Human Resources",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "HSCI",
+              "descr": "HSCI - College Science Scholars Seminar",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "IMP",
+              "descr": "IMP - Interdisciplinary Thesis",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "IMP"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "INST",
+              "descr": "INST - Interdisciplinary Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ISBU",
+              "descr": "ISBU - Interdisciplinary Studies-Business",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "IDST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ISHU",
+              "descr": "ISHU - Interdisciplinary Studies-Humanities",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "IDST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ISIN",
+              "descr": "ISIN - Interdisciplinary Studies-Code of Inquiry",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "IDST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ISLS",
+              "descr": "ISLS - Interdisciplinary Studies-Liberal Studies Seminar",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "IDST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ISSS",
+              "descr": "ISSS - Interdisciplinary Studies-Social Sciences",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "IDST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "IT",
+              "descr": "IT - Informational Technology",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "ITAL",
+              "descr": "ITAL - Italian",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "ITTR",
+              "descr": "ITTR - Italian in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "JAPN",
+              "descr": "JAPN - Japanese",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "JPTR",
+              "descr": "JPTR - Japanese in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "KICH",
+              "descr": "KICH - Maya K'iche'",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "KINE",
+              "descr": "KINE - Kinesiology",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDKI"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "KLPA",
+              "descr": "KLPA - Kinesiology Lifetime Physical Activity",
+              "acad_groups": [
+                  "EDUC"
+              ],
+              "acad_orgs": [
+                  "EDKI"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "KOR",
+              "descr": "KOR - Korean",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "EALC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LAR",
+              "descr": "LAR - Landscape Architecture",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "LAR"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LASE",
+              "descr": "LASE - Liberal Arts Seminar",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CGASD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LAST",
+              "descr": "LAST - Latin American Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LATI",
+              "descr": "LATI - Latin",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "CLAS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LAW",
+              "descr": "LAW - Law",
+              "acad_groups": [
+                  "LAW"
+              ],
+              "acad_orgs": [
+                  "LAWD"
+              ],
+              "careers": [
+                  "LAW"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "LING",
+              "descr": "LING - Linguistics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "ANTH"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LNGS",
+              "descr": "LNGS - General Linguistics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LPPA",
+              "descr": "LPPA - Leadership Public Policy - Analysis",
+              "acad_groups": [
+                  "LEAD"
+              ],
+              "acad_orgs": [
+                  "PPOL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LPPL",
+              "descr": "LPPL - Leadership Public Policy - Leadership",
+              "acad_groups": [
+                  "LEAD"
+              ],
+              "acad_orgs": [
+                  "PPOL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LPPP",
+              "descr": "LPPP - Leadership Public Policy - Policy",
+              "acad_groups": [
+                  "LEAD"
+              ],
+              "acad_orgs": [
+                  "PPOL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "LPPS",
+              "descr": "LPPS - Leadership Public Policy - Substance",
+              "acad_groups": [
+                  "LEAD"
+              ],
+              "acad_orgs": [
+                  "PPOL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MAE",
+              "descr": "MAE - Mechanical & Aerospace Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "MAE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MATH",
+              "descr": "MATH - Mathematics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MATH"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MDST",
+              "descr": "MDST - Media Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MDST"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MED",
+              "descr": "MED - Medicine",
+              "acad_groups": [
+                  "MED"
+              ],
+              "acad_orgs": [
+                  "MEDD"
+              ],
+              "careers": [
+                  "MEDS"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "OFFGR"
+              ]
+          },
+          {
+              "subject": "MESA",
+              "descr": "MESA - Middle Eastern & South Asian Languages & Cultures",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MICR",
+              "descr": "MICR - Microbiology",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "MICR"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MISC",
+              "descr": "MISC - Military Science",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "MISC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MSE",
+              "descr": "MSE - Materials Science and Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "MSE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MSP",
+              "descr": "MSP - Medieval Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "HIST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MUBD",
+              "descr": "MUBD - Music-Marching Band",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MUSI"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MUEN",
+              "descr": "MUEN - Music-Ensembles",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MUSI"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MUPF",
+              "descr": "MUPF - Music-Private Performance Instruction",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MUSI"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "MUSI",
+              "descr": "MUSI - Music",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MUSI"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "NASC",
+              "descr": "NASC - Naval Science",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "NASC"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "NCPR",
+              "descr": "NCPR - Non-Credit Professional Review",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "NOCR"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "NESC",
+              "descr": "NESC - Neuroscience",
+              "acad_groups": [
+                  "CGAS",
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "NESC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "NUCO",
+              "descr": "NUCO - Nursing Core",
+              "acad_groups": [
+                  "NURS"
+              ],
+              "acad_orgs": [
+                  "NURSD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "NUIP",
+              "descr": "NUIP - Nursing Interprofessional",
+              "acad_groups": [
+                  "NURS"
+              ],
+              "acad_orgs": [
+                  "NURSD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "NURS",
+              "descr": "NURS - Nursing",
+              "acad_groups": [
+                  "NURS"
+              ],
+              "acad_orgs": [
+                  "NURSD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PATH",
+              "descr": "PATH - Pathology",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "PATH"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PC",
+              "descr": "PC - Procurement and Contracts Management",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PERS",
+              "descr": "PERS - Persian",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PETR",
+              "descr": "PETR - Persian in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PHAR",
+              "descr": "PHAR - Pharmacology",
+              "acad_groups": [
+                  "CGAS",
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "PHAR"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PHIL",
+              "descr": "PHIL - Philosophy",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "PHIL"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PHS",
+              "descr": "PHS - Public Health Sciences",
+              "acad_groups": [
+                  "CGAS",
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "PHS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PHY",
+              "descr": "PHY - Physiology",
+              "acad_groups": [
+                  "MDS"
+              ],
+              "acad_orgs": [
+                  "PHY"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PHYS",
+              "descr": "PHYS - Physics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "PHYS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLAC",
+              "descr": "PLAC - Planning Application",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "PLAN"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLAD",
+              "descr": "PLAD - Politics-Departmental Seminar",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "POLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLAN",
+              "descr": "PLAN - Urban and Environmental Planning",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "PLAN"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLAP",
+              "descr": "PLAP - Politics-American Politics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "POLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLCP",
+              "descr": "PLCP - Politics-Comparative Politics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "POLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLIR",
+              "descr": "PLIR - Politics-International Relations",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "POLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PLPT",
+              "descr": "PLPT - Politics-Political Theory",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "POLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "POL",
+              "descr": "POL - Polish",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PORT",
+              "descr": "PORT - Portuguese",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "POTR",
+              "descr": "POTR - Portuguese in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PPL",
+              "descr": "PPL - Political Philosophy, Policy, and Law",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "PHIL"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PSHM",
+              "descr": "PSHM - Professional Studies-Health Sciences Management",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN",
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PSLP",
+              "descr": "PSLP - PS-Leadership Program",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PSPA",
+              "descr": "PSPA - Professional Studies-Public Administration",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PSPM",
+              "descr": "PSPM - Professional Studies-Project Management",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PSPS",
+              "descr": "PSPS - Professional Studies - Public Safety",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "PST",
+              "descr": "PST - Political and Social Thought",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "PST"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "PSYC",
+              "descr": "PSYC - Psychology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "PSYC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELA",
+              "descr": "RELA - Religion-African Religions",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELB",
+              "descr": "RELB - Religion-Buddhism",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELC",
+              "descr": "RELC - Religion-Christianity",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELG",
+              "descr": "RELG - Religion-General Religion",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELH",
+              "descr": "RELH - Religion-Hinduism",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELI",
+              "descr": "RELI - Religion-Islam",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELJ",
+              "descr": "RELJ - Religion-Judaism",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RELS",
+              "descr": "RELS - Religion-Special Topic",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "RELG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RUSS",
+              "descr": "RUSS - Russian",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "RUTR",
+              "descr": "RUTR - Russian in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SANS",
+              "descr": "SANS - Sanskrit",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SARC",
+              "descr": "SARC - Architecture School",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "ARCHD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SAST",
+              "descr": "SAST - South Asian Studies",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SATR",
+              "descr": "SATR - South Asian Literature in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SEC",
+              "descr": "SEC - CYB SEC Analysis",
+              "acad_groups": [
+                  "SCPS"
+              ],
+              "acad_orgs": [
+                  "SCPSD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "SCPS"
+              ]
+          },
+          {
+              "subject": "SLAV",
+              "descr": "SLAV - Slavic",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SLTR",
+              "descr": "SLTR - Slavic in Translation",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SLLT"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SOC",
+              "descr": "SOC - Sociology",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SOC"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SPAN",
+              "descr": "SPAN - Spanish",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SPAN"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "INTER",
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "STAT",
+              "descr": "STAT - Statistics",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "STAT"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "STS",
+              "descr": "STS - Science, Technology, and Society",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "STS"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SWAH",
+              "descr": "SWAH - Swahili",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "AAS"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "SYS",
+              "descr": "SYS - Systems & Information Engineering",
+              "acad_groups": [
+                  "ENGR"
+              ],
+              "acad_orgs": [
+                  "ESE"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "TURK",
+              "descr": "TURK - Turkish",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "UD",
+              "descr": "UD - Urban Design",
+              "acad_groups": [
+                  "ARCH"
+              ],
+              "acad_orgs": [
+                  "ARCHDP"
+              ],
+              "careers": [
+                  "GRAD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "UNST",
+              "descr": "UNST - University Studies",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "PROVD"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "URDU",
+              "descr": "URDU - Urdu",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "MESA"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "USEM",
+              "descr": "USEM - University Seminar",
+              "acad_groups": [
+                  "PROV"
+              ],
+              "acad_orgs": [
+                  "PROVD"
+              ],
+              "careers": [
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          },
+          {
+              "subject": "WGS",
+              "descr": "WGS - Women, Gender, and Sexuality",
+              "acad_groups": [
+                  "CGAS"
+              ],
+              "acad_orgs": [
+                  "SWAG"
+              ],
+              "careers": [
+                  "GRAD",
+                  "UGRD"
+              ],
+              "campuses": [
+                  "MAIN"
+              ]
+          }
+      ]
+  };
+  
+  var subjectDropdown = document.getElementById("subject");
+  
+  
+  for (var i = 0; i<subjectsData.subjects.length; i++){
+      var sub = subjectsData.subjects[i];
+      var option = document.createElement("option");
+      option.text = sub.descr;
+      option.value = sub.subject;
+      subjectDropdown.add(option);
+  }</script>
+  <script>
+    var departmentsData = {
+      "acad_orgs": [
+        {
+            "acad_org": "AAS",
+            "descr": "African-American & African Std"
+        },
+        {
+            "acad_org": "AIRS",
+            "descr": "Air Science"
+        },
+        {
+            "acad_org": "ASL",
+            "descr": "American Sign Language"
+        },
+        {
+            "acad_org": "AMST",
+            "descr": "American Studies"
+        },
+        {
+            "acad_org": "ANTH",
+            "descr": "Anthropology"
+        },
+        {
+            "acad_org": "APMA",
+            "descr": "Applied Mathematics"
+        },
+        {
+            "acad_org": "AM",
+            "descr": "Applied Mechanics"
+        },
+        {
+            "acad_org": "ALAR",
+            "descr": "Arch & Landscape Arch"
+        },
+        {
+            "acad_org": "ARH",
+            "descr": "Architectural History"
+        },
+        {
+            "acad_org": "ARCHDP",
+            "descr": "Architecture Department"
+        },
+        {
+            "acad_org": "ART",
+            "descr": "Art"
+        },
+        {
+            "acad_org": "ASTR",
+            "descr": "Astronomy"
+        },
+        {
+            "acad_org": "BIOC",
+            "descr": "Biochem & Molecular Genetics"
+        },
+        {
+            "acad_org": "BIOL",
+            "descr": "Biology"
+        },
+        {
+            "acad_org": "BIOM",
+            "descr": "Biomedical Engineering"
+        },
+        {
+            "acad_org": "BIMS",
+            "descr": "Biomedical Sciences"
+        },
+        {
+            "acad_org": "BIOP",
+            "descr": "Biophysics"
+        },
+        {
+            "acad_org": "CELL",
+            "descr": "Cell Biology"
+        },
+        {
+            "acad_org": "CHE",
+            "descr": "Chemical Engineering"
+        },
+        {
+            "acad_org": "CHEM",
+            "descr": "Chemistry"
+        },
+        {
+            "acad_org": "CLAS",
+            "descr": "Classics"
+        },
+        {
+            "acad_org": "COGS",
+            "descr": "Cognitive Science"
+        },
+        {
+            "acad_org": "CGAS",
+            "descr": "College & Graduate Arts & Sci"
+        },
+        {
+            "acad_org": "CS",
+            "descr": "Computer Science"
+        },
+        {
+            "acad_org": "EDIS",
+            "descr": "Curriculum Inst & Special Ed"
+        },
+        {
+            "acad_org": "ENGRD",
+            "descr": "Dean Engineering & Applied Sci"
+        },
+        {
+            "acad_org": "ARCHD",
+            "descr": "Dean of Architecture"
+        },
+        {
+            "acad_org": "CGASD",
+            "descr": "Dean of Arts & Sciences"
+        },
+        {
+            "acad_org": "COMMD",
+            "descr": "Dean of Commerce"
+        },
+        {
+            "acad_org": "SCPSD",
+            "descr": "Dean of Continuing & Prof Stds"
+        },
+        {
+            "acad_org": "DATAD",
+            "descr": "Dean of Data Science"
+        },
+        {
+            "acad_org": "EDUCD",
+            "descr": "Dean of Education"
+        },
+        {
+            "acad_org": "GBUSD",
+            "descr": "Dean of Graduate Business"
+        },
+        {
+            "acad_org": "LAWD",
+            "descr": "Dean of Law"
+        },
+        {
+            "acad_org": "MEDD",
+            "descr": "Dean of Medicine"
+        },
+        {
+            "acad_org": "NURSD",
+            "descr": "Dean of Nursing"
+        },
+        {
+            "acad_org": "DRAM",
+            "descr": "Drama"
+        },
+        {
+            "acad_org": "EALC",
+            "descr": "East Asian Lang, Lit & Culture"
+        },
+        {
+            "acad_org": "ECON",
+            "descr": "Economics"
+        },
+        {
+            "acad_org": "ECE",
+            "descr": "Electrical & Computer Engr"
+        },
+        {
+            "acad_org": "STS",
+            "descr": "Engineering & Society"
+        },
+        {
+            "acad_org": "ESE",
+            "descr": "Engineering Systms & Environmt"
+        },
+        {
+            "acad_org": "ENGL",
+            "descr": "English"
+        },
+        {
+            "acad_org": "ESL",
+            "descr": "English as a Second Language"
+        },
+        {
+            "acad_org": "EVSC",
+            "descr": "Environmental Sciences"
+        },
+        {
+            "acad_org": "ETP",
+            "descr": "Environmental Thought & Pract"
+        },
+        {
+            "acad_org": "PROVD",
+            "descr": "Executive VP & Provost"
+        },
+        {
+            "acad_org": "FREN",
+            "descr": "French"
+        },
+        {
+            "acad_org": "GERM",
+            "descr": "German"
+        },
+        {
+            "acad_org": "HIST",
+            "descr": "History"
+        },
+        {
+            "acad_org": "EDHS",
+            "descr": "Human Services"
+        },
+        {
+            "acad_org": "IMP",
+            "descr": "Interdisciplinary Major"
+        },
+        {
+            "acad_org": "IDST",
+            "descr": "Interdisciplinary Studies"
+        },
+        {
+            "acad_org": "EDKI",
+            "descr": "Kinesiology"
+        },
+        {
+            "acad_org": "LAR",
+            "descr": "Landscape Architecture"
+        },
+        {
+            "acad_org": "EDLF",
+            "descr": "Leadership, Foundations & Pol"
+        },
+        {
+            "acad_org": "MSE",
+            "descr": "Materials Science & Engr"
+        },
+        {
+            "acad_org": "MATH",
+            "descr": "Mathematics"
+        },
+        {
+            "acad_org": "MCDG",
+            "descr": "McIntire Darden Grad Business"
+        },
+        {
+            "acad_org": "MAE",
+            "descr": "Mechanical & Aerospace Engr"
+        },
+        {
+            "acad_org": "MDST",
+            "descr": "Media Studies"
+        },
+        {
+            "acad_org": "MICR",
+            "descr": "Microbiol, Immun & Cancer Biol"
+        },
+        {
+            "acad_org": "MESA",
+            "descr": "Middle Eastern & South Asian"
+        },
+        {
+            "acad_org": "MISC",
+            "descr": "Military Science"
+        },
+        {
+            "acad_org": "MUSI",
+            "descr": "Music"
+        },
+        {
+            "acad_org": "NASC",
+            "descr": "Naval Science"
+        },
+        {
+            "acad_org": "NESC",
+            "descr": "Neuroscience"
+        },
+        {
+            "acad_org": "PATH",
+            "descr": "Pathology"
+        },
+        {
+            "acad_org": "PHAR",
+            "descr": "Pharmacology"
+        },
+        {
+            "acad_org": "PHIL",
+            "descr": "Philosophy"
+        },
+        {
+            "acad_org": "PHYS",
+            "descr": "Physics"
+        },
+        {
+            "acad_org": "PHY",
+            "descr": "Physiology"
+        },
+        {
+            "acad_org": "PST",
+            "descr": "Political & Social Thought"
+        },
+        {
+            "acad_org": "POLT",
+            "descr": "Politics"
+        },
+        {
+            "acad_org": "PSYC",
+            "descr": "Psychology"
+        },
+        {
+            "acad_org": "PHS",
+            "descr": "Public Health Sciences"
+        },
+        {
+            "acad_org": "PPOL",
+            "descr": "Public Policy"
+        },
+        {
+            "acad_org": "RELG",
+            "descr": "Religious Studies"
+        },
+        {
+            "acad_org": "SLLT",
+            "descr": "Slavic"
+        },
+        {
+            "acad_org": "SOC",
+            "descr": "Sociology"
+        },
+        {
+            "acad_org": "SPAN",
+            "descr": "Spanish, Italian & Portuguese"
+        },
+        {
+            "acad_org": "STAT",
+            "descr": "Statistics"
+        },
+        {
+            "acad_org": "PLAN",
+            "descr": "Urban & Environmental Planning"
+        },
+        {
+            "acad_org": "SWAG",
+            "descr": "Women, Gender & Sexuality"
+        }
+    ]
+    }
+    var departmentDropdown = document.getElementById("department");
+  
+  
+  for (var i = 0; i<departmentsData.acad_orgs.length; i++){
+      var dep = departmentsData.acad_orgs[i];
+      var option = document.createElement("option");
+      option.text = dep.descr;
+      option.value = dep.acad_org;
+      departmentDropdown.add(option);}
+  </script>
+  </body>
+</html>
+  
+
+{% endblock %}
